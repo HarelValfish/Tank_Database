@@ -146,6 +146,38 @@ Open the URL Vite prints (default **http://localhost:5173**).
 - **Add unit** — slide-over form with client-side validation, live image preview, and success/error toasts.
 - **Feedback** — loading skeletons, error/empty states with reconnect, animated toast notifications.
 
+## Docker & CI/CD
+
+### Run the whole stack in containers
+
+```bash
+docker compose up --build
+# frontend → http://localhost:8080  (nginx serves the SPA and proxies /api → backend)
+```
+
+This starts MongoDB, the API, and the nginx-served frontend on one network. Swap
+the local `mongo` service for an Atlas `MONGO_URI` in production.
+
+### GitHub Actions pipeline (`.github/workflows/ci-cd.yml`)
+
+Runs on every push / PR to `main`, with four jobs:
+
+| Job | When | What it does |
+| ------ | --------------- | ------------------------------------------------------------ |
+| **test** | every run | `npm test` (backend smoke tests) + `npm run build` (frontend) |
+| **build** | every run | Builds both Docker images to catch Dockerfile breakage (no push) |
+| **push** | `main` only | Builds + pushes images to **GHCR** (`ghcr.io/harelvalfish/tank-db-{backend,frontend}`), tagged `latest` + short SHA |
+| **deploy** | `main` only | **Placeholder** — gated by the `production` environment; prints the published image names and TODO steps |
+
+**Wiring up the real deploy** — edit the `deploy` job and add the matching repo secrets:
+- SSH to a server: `ssh $HOST 'cd /app && docker compose pull && docker compose up -d'`
+- PaaS deploy hook: `curl -X POST "$DEPLOY_HOOK_URL"`
+
+**Notes:**
+- The `push` job uses the built-in `GITHUB_TOKEN` — no extra secrets needed for GHCR.
+- First publish creates a **private** package; make it public (or pull with a token) for deploys.
+- Add **required reviewers** to the `production` environment (repo Settings → Environments) to turn the deploy into a manual approval gate.
+
 ## Troubleshooting
 
 - **`MONGO_URI is not defined`** → you didn't create `backend/.env` (run `cp .env.example .env`).

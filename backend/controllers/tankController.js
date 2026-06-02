@@ -1,4 +1,5 @@
 import { Tank } from "../models/Tank.js";
+import { escapeRegex, eraToDecadePrefix, decadeBucketsFromText } from "../utils.js";
 
 /**
  * GET /api/tanks
@@ -28,8 +29,7 @@ export async function getTanks(req, res, next) {
 
     if (era && era.trim() && era !== "All") {
       // era looks like "2000s" → match the leading "200" against serviceTime.
-      const decade = era.replace(/s$/, "").slice(0, 3);
-      query.serviceTime = new RegExp(decade, "i");
+      query.serviceTime = new RegExp(eraToDecadePrefix(era), "i");
     }
 
     const tanks = await Tank.find(query).sort({ createdAt: -1 });
@@ -52,11 +52,7 @@ export async function getFilterMeta(_req, res, next) {
     // Derive decade buckets ("1980s", "2000s", …) from serviceTime strings.
     const eras = new Set();
     for (const st of serviceTimes) {
-      const matches = st.match(/\d{4}/g) || [];
-      for (const year of matches) {
-        const decade = `${year.slice(0, 3)}0s`;
-        eras.add(decade);
-      }
+      for (const decade of decadeBucketsFromText(st)) eras.add(decade);
     }
 
     res.json({
@@ -180,9 +176,4 @@ export async function updateTank(req, res, next) {
     }
     next(err);
   }
-}
-
-// Escapes user input before it is interpolated into a RegExp.
-function escapeRegex(str) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

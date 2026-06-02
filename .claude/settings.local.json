@@ -11,7 +11,13 @@
       "Bash(node --check routes/tankRoutes.js)",
       "Bash(timeout 25 node server.js)",
       "Bash(node *)",
-      "Bash(lsof -nP -iTCP:5000 -sTCP:LISTEN)"
+      "Bash(lsof -nP -iTCP:5000 -sTCP:LISTEN)",
+      "Bash(docker info *)",
+      "Bash(npm test *)",
+      "Bash(python3 -c \"import yaml,sys; yaml.safe_load\\(open\\('.github/workflows/ci-cd.yml'\\)\\); print\\('✔ valid YAML'\\)\")",
+      "Bash(ruby -ryaml -e \"YAML.load_file\\('.github/workflows/ci-cd.yml'\\); puts '✔ workflow YAML parses'\")",
+      "Bash(ruby -ryaml -e \"d=YAML.load_file\\('.github/workflows/ci-cd.yml'\\); puts d['jobs'].keys.join\\(', '\\)\")",
+      "Bash(ruby -ryaml -e \"YAML.load_file\\('docker-compose.yml'\\); puts '✔ compose YAML parses'\")"
     ]
   }
 }
