@@ -89,3 +89,35 @@ export async function fetchTankImage(name) {
   const first = Object.values(pages)[0];
   return first?.thumbnail?.source ?? null;
 }
+
+/**
+ * Fetches the intro/summary text of the best-matching Wikipedia article for a
+ * tank, to pre-fill the History field. Returns plain text, or null if none.
+ */
+export async function fetchTankHistory(name) {
+  const term = (name || "").trim();
+  if (!term) return null;
+
+  const params = new URLSearchParams({
+    action: "query",
+    format: "json",
+    origin: "*",
+    generator: "search",
+    gsrsearch: term,
+    gsrlimit: "1",
+    prop: "extracts",
+    exintro: "1", // lead section only
+    explaintext: "1", // plain text, no HTML
+  });
+
+  const res = await fetch(`https://en.wikipedia.org/w/api.php?${params}`);
+  if (!res.ok) throw new Error("History service unavailable.");
+
+  const data = await res.json();
+  const pages = data?.query?.pages;
+  if (!pages) return null;
+
+  const first = Object.values(pages)[0];
+  const text = first?.extract?.trim();
+  return text || null;
+}

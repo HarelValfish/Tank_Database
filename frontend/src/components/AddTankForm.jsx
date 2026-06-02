@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { X, Save, Loader2, ImageOff, Sparkles } from "lucide-react";
-import { api, fetchTankImage } from "../lib/api.js";
+import { X, Save, Loader2, ImageOff, Sparkles, ScrollText } from "lucide-react";
+import { api, fetchTankImage, fetchTankHistory } from "../lib/api.js";
 import { useToast } from "../context/ToastContext.jsx";
 
 const EMPTY = {
@@ -81,6 +81,7 @@ export default function AddTankForm({ onClose, onSaved, tank = null }) {
   const [submitting, setSubmitting] = useState(false);
   const [imgOk, setImgOk] = useState(true);
   const [fetchingImg, setFetchingImg] = useState(false);
+  const [fetchingHist, setFetchingHist] = useState(false);
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -124,6 +125,31 @@ export default function AddTankForm({ onClose, onSaved, tank = null }) {
       toast.error(err.message || "Image lookup failed.");
     } finally {
       setFetchingImg(false);
+    }
+  };
+
+  // Auto-fetch the History text from Wikipedia using the tank's name + variant.
+  const handleFetchHistory = async () => {
+    const name = form.tankName.trim();
+    if (!name) {
+      setErrors((er) => ({ ...er, tankName: "Enter a tank name first." }));
+      toast.info("Enter a tank name, then fetch its history.");
+      return;
+    }
+    setFetchingHist(true);
+    try {
+      const query = form.variant.trim() ? `${name} ${form.variant.trim()}` : name;
+      const text = await fetchTankHistory(query);
+      if (text) {
+        setForm((f) => ({ ...f, history: text }));
+        toast.success(`History found for "${name}".`);
+      } else {
+        toast.error(`No history found for "${name}". Try a different name.`);
+      }
+    } catch (err) {
+      toast.error(err.message || "History lookup failed.");
+    } finally {
+      setFetchingHist(false);
     }
   };
 
@@ -330,15 +356,37 @@ export default function AddTankForm({ onClose, onSaved, tank = null }) {
               placeholder="Short tactical summary…"
             />
 
-            <Field
-              label="History"
-              name="history"
-              value={form.history}
-              onChange={update}
-              textarea
-              rows={5}
-              placeholder="Development and service history…"
-            />
+            {/* History + auto-fetch from Wikipedia */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label htmlFor="history" className="label-mono text-ink-300">
+                  History
+                </label>
+                <button
+                  type="button"
+                  onClick={handleFetchHistory}
+                  disabled={fetchingHist}
+                  title="Fetch the history summary from Wikipedia using the tank name"
+                  className="flex items-center gap-1.5 rounded-md border border-amber/50 bg-amber/10 px-2.5 py-1 font-display text-[11px] font-600 uppercase tracking-wide text-amber-glow transition hover:bg-amber/20 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {fetchingHist ? (
+                    <Loader2 size={13} className="animate-spin" />
+                  ) : (
+                    <ScrollText size={13} />
+                  )}
+                  Fetch history
+                </button>
+              </div>
+              <textarea
+                id="history"
+                name="history"
+                rows={5}
+                value={form.history}
+                onChange={update}
+                placeholder="Development and service history… or click Fetch history."
+                className="w-full resize-none rounded-md border border-ink-700 bg-ink-900 px-3.5 py-2.5 font-body text-sm text-ink-100 placeholder:text-ink-500 outline-none transition focus:border-amber/60 focus:ring-1 focus:ring-amber/40"
+              />
+            </div>
           </div>
 
           {/* Footer actions */}
