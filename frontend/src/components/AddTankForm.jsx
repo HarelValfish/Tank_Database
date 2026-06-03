@@ -86,10 +86,14 @@ export default function AddTankForm({ onClose, onSaved, tank = null }) {
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
+    // Save the previous overflow value so we restore it on cleanup rather than
+    // unconditionally clearing to "". This prevents clobbering TankDetail's
+    // overflow lock when the form closes while the detail modal is still open.
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prev;
     };
   }, [onClose]);
 

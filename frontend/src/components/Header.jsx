@@ -1,7 +1,11 @@
 import { motion } from "framer-motion";
-import { Plus, Radar } from "lucide-react";
+import { Plus, Radar, Sparkles } from "lucide-react";
 
-export default function Header({ count, onAdd }) {
+// Local-only flag (set in frontend/.env). Absent in production builds, so the
+// AI Import button never renders there.
+const AI_IMPORT_ENABLED = import.meta.env.VITE_ENABLE_AI_IMPORT === "true";
+
+export default function Header({ count, onAdd, onAiImport }) {
   return (
     <header className="sticky top-0 z-40 border-b border-ink-700/80 bg-ink-950/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
@@ -30,6 +34,19 @@ export default function Header({ count, onAdd }) {
               {count} {count === 1 ? "UNIT" : "UNITS"} ONLINE
             </span>
           </div>
+
+          {AI_IMPORT_ENABLED && (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={onAiImport}
+              title="Bulk-add vehicles from a prompt (local only)"
+              className="flex items-center gap-2 rounded-md border border-olive/50 bg-olive/10 px-4 py-2.5 font-display text-sm font-600 tracking-wide text-olive transition-colors hover:bg-olive/20"
+            >
+              <Sparkles size={17} />
+              <span className="hidden sm:inline">AI IMPORT</span>
+            </motion.button>
+          )}
 
           <motion.button
             whileHover={{ scale: 1.03 }}

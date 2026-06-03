@@ -178,6 +178,62 @@ Runs on every push / PR to `main`, with four jobs:
 - First publish creates a **private** package; make it public (or pull with a token) for deploys.
 - Add **required reviewers** to the `production` environment (repo Settings → Environments) to turn the deploy into a manual approval gate.
 
+## Local-only AI bulk importer (optional)
+
+Add many vehicles at once from a prompt (e.g. *"the Leopard 2 family"*) instead of
+typing each field. It's **deliberately local-only**: the routes and UI are gated behind
+env flags and are **never present in a production build**, so there's nothing to abuse.
+
+Two providers (set `AI_PROVIDER`):
+- **`groq`** (default, recommended) — free hosted ~70B model. Far better factual accuracy
+  than a small local model, zero local resource use, $0 within Groq's free tier. Runs only
+  from your machine, so it stays local-only.
+- **`ollama`** — fully local (no data leaves your Mac), but a small model is weaker on facts.
+
+**Setup — Groq (recommended):**
+
+1. Get a free API key at <https://console.groq.com/keys>.
+2. Configure `backend/.env`:
+
+```ini
+ENABLE_AI_IMPORT=true
+AI_PROVIDER=groq
+GROQ_API_KEY=gsk_your_key_here
+GROQ_MODEL=llama-3.3-70b-versatile
+```
+
+```ini
+# frontend/.env
+VITE_ENABLE_AI_IMPORT=true
+```
+
+**Setup — Ollama (fully local alternative):**
+
+```bash
+brew install --cask ollama-app && open -a Ollama
+ollama pull qwen2.5:7b          # ~4.4 GB
+```
+```ini
+# backend/.env
+ENABLE_AI_IMPORT=true
+AI_PROVIDER=ollama
+OLLAMA_MODEL=qwen2.5:7b
+```
+
+Restart both dev servers after changing env. An **"AI Import"** button appears in the header.
+
+**Flow:** type a prompt → the model returns a batch → **review & edit each vehicle**
+in the preview grid (images auto-fetched from Wikipedia) → **Save All**. Because local +
+production share one Atlas database, saved vehicles appear on the live site immediately.
+
+| Endpoint | Gated by | Notes |
+| -------- | -------- | ----- |
+| `POST /api/tanks/generate` | `ENABLE_AI_IMPORT` | Prompt → structured tanks (no DB write) |
+| `POST /api/tanks/bulk`     | `ENABLE_AI_IMPORT` | Inserts the reviewed batch |
+
+> ⚠️ A local 7B model is good but not perfect on exact specs — the **review/edit step
+> before saving** is the guardrail. Keep both flags **unset in production** (the default).
+
 ## Troubleshooting
 
 - **`MONGO_URI is not defined`** → you didn't create `backend/.env` (run `cp .env.example .env`).

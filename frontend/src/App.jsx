@@ -5,6 +5,7 @@ import FilterBar from "./components/FilterBar.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import TankDetail from "./components/TankDetail.jsx";
 import AddTankForm from "./components/AddTankForm.jsx";
+import AiImportPanel from "./components/AiImportPanel.jsx";
 import { api } from "./lib/api.js";
 import { useToast } from "./context/ToastContext.jsx";
 
@@ -26,6 +27,7 @@ export default function App() {
   const [selected, setSelected] = useState(null);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState(null); // tank being edited, or null
+  const [aiOpen, setAiOpen] = useState(false); // local-only AI import panel
 
   // Fetch tanks for the current filter set.
   const fetchTanks = useCallback(async () => {
@@ -62,12 +64,23 @@ export default function App() {
     loadFilters();
   }, [loadFilters]);
 
-  // After a create or edit, refresh the grid + filter options, and keep an
-  // open detail view in sync if it's showing the tank we just edited.
+  // After a create or edit, refresh the grid + filter options.
+  // When editing an existing tank, close the detail modal so the user returns
+  // to the refreshed grid with no lingering backdrop overlay. (If a fresh tank
+  // is being added, preserve any open detail view.)
   const handleSaved = (saved) => {
     fetchTanks();
     loadFilters();
-    setSelected((cur) => (cur && saved && cur.id === saved.id ? saved : cur));
+    if (editing) {
+      // Edit path: dismiss the detail modal — the grid refresh shows the
+      // updated card. This eliminates the stray backdrop that appeared when
+      // TankDetail stayed open after the edit slide-over closed.
+      setSelected(null);
+    } else {
+      // Add path: keep any open detail view in sync (no-op in practice since
+      // adding a new tank doesn't affect an already-selected different tank).
+      setSelected((cur) => (cur && saved && cur.id === saved.id ? saved : cur));
+    }
   };
 
   const closeEditor = () => {
@@ -75,9 +88,27 @@ export default function App() {
     setEditing(null);
   };
 
+  // Delete a tank: remove from DB, close the detail modal, refresh grid + filters.
+  const handleDelete = async (tank) => {
+    try {
+      await api.deleteTank(tank.id);
+      toast.success(`${tank.tankName} removed from registry.`);
+      setSelected(null);
+      fetchTanks();
+      loadFilters();
+    } catch (err) {
+      toast.error(err.message || "Failed to delete tank.");
+      throw err; // let the modal reset its confirm/deleting state
+    }
+  };
+
   return (
     <div className="min-h-screen tactical-grid">
-      <Header count={tanks.length} onAdd={() => setAdding(true)} />
+      <Header
+        count={tanks.length}
+        onAdd={() => setAdding(true)}
+        onAiImport={() => setAiOpen(true)}
+      />
 
       {/* Hero strip */}
       <section className="mx-auto max-w-7xl px-5 pt-10 sm:px-8">
@@ -126,6 +157,7 @@ export default function App() {
               tank={selected}
               onClose={() => setSelected(null)}
               onEdit={(t) => setEditing(t)}
+              onDelete={handleDelete}
             />
           )}
         </AnimatePresence>
@@ -135,6 +167,19 @@ export default function App() {
       <AnimatePresence>
         {(adding || editing) && (
           <AddTankForm tank={editing} onClose={closeEditor} onSaved={handleSaved} />
+        )}
+      </AnimatePresence>
+
+      {/* Local-only AI bulk importer */}
+      <AnimatePresence>
+        {aiOpen && (
+          <AiImportPanel
+            onClose={() => setAiOpen(false)}
+            onSaved={() => {
+              fetchTanks();
+              loadFilters();
+            }}
+          />
         )}
       </AnimatePresence>
 

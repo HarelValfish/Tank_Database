@@ -177,3 +177,19 @@ export async function updateTank(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * DELETE /api/tanks/:id
+ */
+export async function deleteTank(req, res, next) {
+  try {
+    const tank = await Tank.findByIdAndDelete(req.params.id);
+    if (!tank) return res.status(404).json({ message: "Tank not found." });
+    res.json({ id: req.params.id, deleted: true });
+  } catch (err) {
+    if (err.name === "CastError") {
+      return res.status(400).json({ message: "Invalid tank id." });
+    }
+    next(err);
+  }
+}

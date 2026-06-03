@@ -1,6 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { X, Weight, Users, Gauge, Crosshair, Calendar, ScrollText, FileText, Pencil } from "lucide-react";
+import {
+  X, Weight, Users, Gauge, Crosshair, Calendar, ScrollText, FileText, Pencil, Trash2, Loader2,
+} from "lucide-react";
 
 const FALLBACK =
   "data:image/svg+xml;utf8," +
@@ -35,7 +37,21 @@ function Section({ icon: Icon, title, children }) {
   );
 }
 
-export default function TankDetail({ tank, onClose, onEdit }) {
+export default function TankDetail({ tank, onClose, onEdit, onDelete }) {
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await onDelete(tank);
+      // On success the parent unmounts this modal; no need to reset state.
+    } catch {
+      setDeleting(false);
+      setConfirmDelete(false);
+    }
+  };
+
   // Lock body scroll while the modal is open, and close on Escape.
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -80,8 +96,39 @@ export default function TankDetail({ tank, onClose, onEdit }) {
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ink-850 via-ink-850/30 to-transparent" />
           <div className="pointer-events-none absolute inset-0 tactical-grid opacity-30" />
 
-          {/* Top-right actions: Edit + Close */}
+          {/* Top-right actions: Delete + Edit + Close */}
           <div className="absolute right-4 top-4 flex items-center gap-2">
+            {onDelete &&
+              (confirmDelete ? (
+                <div className="flex items-center gap-2 rounded-md border border-alert/60 bg-ink-950/80 px-2 py-1 backdrop-blur">
+                  <span className="font-mono text-[11px] uppercase tracking-wide text-alert">Delete?</span>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex items-center gap-1 rounded bg-alert/90 px-2 py-1 font-display text-[11px] font-600 uppercase tracking-wide text-white transition hover:bg-alert disabled:opacity-60"
+                  >
+                    {deleting ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                    Confirm
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={deleting}
+                    className="rounded px-2 py-1 font-display text-[11px] font-600 uppercase tracking-wide text-ink-300 transition hover:text-ink-100"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(true)}
+                  className="grid h-10 w-10 place-items-center rounded-md border border-ink-600 bg-ink-950/70 text-ink-300 backdrop-blur transition hover:border-alert/60 hover:text-alert"
+                  aria-label="Delete this tank"
+                  title="Delete this tank"
+                >
+                  <Trash2 size={16} />
+                </button>
+              ))}
+
             {onEdit && (
               <button
                 onClick={() => onEdit(tank)}
