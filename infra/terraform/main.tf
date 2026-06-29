@@ -79,6 +79,7 @@ resource "null_resource" "bootstrap" {
         --namespace tank-db \
         --from-literal=MONGO_URI="${var.mongo_uri}" \
         --from-literal=CLIENT_ORIGIN="https://harelvalfish.dev" \
+        --from-literal=ADMIN_KEY="${var.admin_key}" \
         --dry-run=client -o yaml | kubectl apply -f -
 
       kubectl apply -f ${path.root}/../../k8s/backend/
