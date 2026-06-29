@@ -36,7 +36,8 @@ resource "aws_iam_role_policy" "deploy_policy" {
         Effect   = "Allow"
         Action   = ["ecr:GetAuthorizationToken", "ecr:BatchCheckLayerAvailability",
                     "ecr:PutImage", "ecr:InitiateLayerUpload", "ecr:UploadLayerPart",
-                    "ecr:CompleteLayerUpload"]
+                    "ecr:CompleteLayerUpload", "ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer",
+                    "ecr:DescribeImages", "ecr:DescribeRepositories"]
         Resource = "*"
       },
       {
