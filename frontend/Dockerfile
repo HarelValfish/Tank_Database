@@ -1,5 +1,5 @@
 # ─── Stage 1: build the static assets with Vite ──────────────────
-FROM node:22-alpine AS build
+FROM --platform=linux/amd64 node:22-alpine AS build
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . .
 RUN npm run build
 
 # ─── Stage 2: serve with nginx ────────────────────────────────────
-FROM nginx:1.27-alpine
+FROM --platform=linux/amd64 nginx:1.27-alpine
 
 # SPA + API-proxy config.
 COPY nginx.conf /etc/nginx/conf.d/default.conf

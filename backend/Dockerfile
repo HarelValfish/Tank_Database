@@ -1,5 +1,5 @@
 # ─── Backend image: Node + Express API ───────────────────────────
-FROM node:22-alpine
+FROM --platform=linux/amd64 node:22-alpine
 
 # Tini for proper signal handling (clean shutdown of the Node process).
 RUN apk add --no-cache tini
