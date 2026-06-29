@@ -103,6 +103,15 @@ jobs:
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.CLUSTER_NAME }}
 
+      - name: Sync k8s secret
+        run: |
+          kubectl create secret generic backend-secrets \
+            --namespace tank-db \
+            --from-literal=MONGO_URI="${{ secrets.MONGO_URI }}" \
+            --from-literal=CLIENT_ORIGIN="https://harelvalfish.dev" \
+            --from-literal=ADMIN_KEY="${{ secrets.ADMIN_KEY }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
       - name: Rolling update — backend
         run: |
           kubectl set image deployment/backend \
