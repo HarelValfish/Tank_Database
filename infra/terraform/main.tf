@@ -56,6 +56,17 @@ resource "null_resource" "bootstrap" {
   }
 
   provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      echo "→ Deleting ingress so LBC removes the ALB before VPC teardown..."
+      aws eks update-kubeconfig --region us-east-1 --name tank-db 2>/dev/null || true
+      kubectl delete ingress tank-db -n tank-db --timeout=90s 2>/dev/null || true
+      echo "→ Waiting 60s for ALB to be fully removed..."
+      sleep 60
+    EOT
+  }
+
+  provisioner "local-exec" {
     command = <<-EOT
       set -e
 
