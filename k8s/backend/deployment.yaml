@@ -33,6 +33,11 @@ spec:
                 secretKeyRef:
                   name: backend-secrets
                   key: CLIENT_ORIGIN
+            - name: ADMIN_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backend-secrets
+                  key: ADMIN_KEY
           readinessProbe:
             httpGet:
               path: /api/health
