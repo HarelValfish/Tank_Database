@@ -12,9 +12,10 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket = "tankdb-terraform-state-769638986113"
-    key    = "tank-db/terraform.tfstate"
-    region = "us-east-1"
+  cloud {
+    organization = "Harel-Inc"
+    workspaces {
+      name = "tank-db"
+    }
   }
 }
